@@ -1,0 +1,68 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);  
+
+const int lazerSensorPin = A0;  
+const int buzzerPin = 2;        
+const int butonPin = 3;        
+
+int urunSayisi = 0;
+int sensorEsigi = 1000;     
+bool lazerAlgilandi = false;    
+bool sonLazerDurumu = false;   
+
+void setup() {
+  lcd.begin(16, 2);
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Urun Sayisi:");
+
+  pinMode(buzzerPin, OUTPUT);
+  pinMode(butonPin, INPUT_PULLUP);  
+
+  Serial.begin(9600);
+
+  lcd.setCursor(0, 1);
+  lcd.print(urunSayisi);
+}
+
+void loop() {
+  int sensorDegeri = analogRead(lazerSensorPin);
+  
+  bool mevcutLazerDurumu = sensorDegeri > sensorEsigi;
+
+  if (mevcutLazerDurumu && !lazerAlgilandi) {
+    lazerAlgilandi = true;  
+  }
+
+  if (!mevcutLazerDurumu && lazerAlgilandi) {
+    urunSayisi++;  
+    
+    tone(buzzerPin, 1000);
+    delay(100);            
+    noTone(buzzerPin);     
+    
+    Serial.print("Urun Sayisi: ");
+    Serial.println(urunSayisi);
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
+    lcd.setCursor(0, 1);
+    lcd.print(urunSayisi);
+
+    lazerAlgilandi = false;  
+  }
+
+  if (digitalRead(butonPin) == LOW) {
+    urunSayisi = 0;
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
+    lcd.setCursor(0, 1);
+    lcd.print(urunSayisi);
+    delay(300);  
+  }
+
+  sonLazerDurumu = mevcutLazerDurumu;
+
+  delay(100);
+}
